@@ -4,25 +4,19 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jara.core.Attentions;
-import org.jara.mode.Mode;
-import org.jara.mode.Setings;
+import org.jara.core.Core;
+import org.jara.mode.Settings;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 @Setter
 @Getter
-@RequiredArgsConstructor
 public class Engine {
     /*
         Класс определяющий настройки модуля
      */
-    private final Setings setings;
-    /*
-        Класс определяющий режим работы модуля
-        либо для анализа, либо для советов
-     */
-    private final Mode mode;
+    private Settings settings;
     /*
         Список мест, к которым надо обратить внимание
      */
@@ -32,12 +26,12 @@ public class Engine {
      */
     private String error;
     /*
-        Метод запускающий сканирование
+        Основная двигающая сила
      */
-    public Engine(Mode mode){
-        this.mode = mode;
-        this.setings = new Setings();
+    private Core core;
 
+    public Engine(Settings settings){
+        this.settings = settings;
     }
     /*
         Метод запускающий сканирование без лишней инициализации
@@ -46,9 +40,18 @@ public class Engine {
         return scan(patch);
     }
     /*
-        Создание отчета
+        Основной метод запуска
      */
-    public void writeReport(){
+    public void scan(){
+        Engine engine = new Engine(settings);
+
+        engine = core.scanningStart(engine);
+        writeReport(engine.getAttentions());
+    }
+    /*
+        Создание отчета(Если в режиме выбран)
+     */
+    public void writeReport(Attentions[] attentions){
 
     }
 
