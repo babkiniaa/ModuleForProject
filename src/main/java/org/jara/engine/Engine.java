@@ -20,7 +20,7 @@ public class Engine {
     /*
         Список мест, к которым надо обратить внимание
      */
-    private Attentions[] attentions;
+    private List<Attentions> attentions;
     /*
         Ошибка в работе, если таковая имеется
      */

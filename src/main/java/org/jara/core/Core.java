@@ -19,18 +19,24 @@ import java.util.*;
 public class Core {
 
     private HashMap<String, String> classes;
-
+    /*
+        Метод запускающий по этапно анализ
+     */
     public Engine scanningStart(Engine engine) {
         Settings settings = engine.getSettings();
         String dir = settings.getInputDir();
         File file = new File(dir);
-        classes = HashMap.newHashMap(settings.getSize());
 
+        classes = HashMap.newHashMap(settings.getSize());
         classes = scanDir(file);
+        engine = analyzeDuplicates(engine);
 
         return engine;
     }
-
+    /*
+        Сканируются дириктории на наличие java файлов
+        для последующего анализа
+     */
     public HashMap<String, String> scanDir(File file) {
         File[] files = file.listFiles();
 
@@ -58,6 +64,7 @@ public class Core {
     public Engine analyzeDuplicates(Engine engine) {
         int windowSize = 5;
         HashMap<String, List<String>> hashToFiles = new HashMap<>();
+        HashMap<String, Attentions> info = new HashMap<>();
 
         for (Map.Entry<String, String> entry : classes.entrySet()) {
             String fileName = entry.getKey();
@@ -69,20 +76,29 @@ public class Core {
                 String hash = hash(block);
 
                 hashToFiles.putIfAbsent(hash, new ArrayList<>());
+                info.putIfAbsent(hash, new Attentions(entry.getKey(), i, block, "Вынеси в отдельный метод"));
                 hashToFiles.get(hash).add(fileName + ":" + (i + 1));
+
             }
         }
 
+        engine.setAttentions(addInEngin(info, hashToFiles));
+
+        return engine;
+    }
+    /*
+        Список ошибок заносится в коллекцию
+     */
+    public List<Attentions> addInEngin(HashMap<String, Attentions> info, HashMap<String, List<String>> hashToFiles){
+        List<Attentions> attentions = new ArrayList<>();
+
         for (Map.Entry<String, List<String>> entry : hashToFiles.entrySet()) {
             if (entry.getValue().size() > 1) {
-                /*
-                Надо придумать сущность в начале потом уже будет заносить ее нормально
-                 */
-                engine.setAttentions(new  Attentions[1]);
-                System.out.println("Дубликат найден в: " + entry.getValue());
+                attentions.add(info.get(entry.getValue()));
             }
         }
-        return engine;
+
+        return attentions;
     }
 
     /*
