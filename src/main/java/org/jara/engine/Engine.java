@@ -1,7 +1,6 @@
 package org.jara.engine;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jara.core.Attentions;
 import org.jara.core.Core;
@@ -32,6 +31,7 @@ public class Engine {
 
     public Engine(Settings settings){
         this.settings = settings;
+        core = new Core();
     }
     /*
         Метод запускающий сканирование без лишней инициализации
@@ -43,15 +43,13 @@ public class Engine {
         Основной метод запуска
      */
     public void scan(){
-        Engine engine = new Engine(settings);
-
-        engine = core.scanningStart(engine);
-        writeReport(engine.getAttentions());
+        attentions = core.scanningStart(settings, settings.getInputDir(), settings.getOutputDir());
+        writeReport(attentions);
     }
     /*
         Создание отчета(Если в режиме выбран)
      */
-    public void writeReport(Attentions[] attentions){
+    public void writeReport(List<Attentions> attentions){
 
     }
 

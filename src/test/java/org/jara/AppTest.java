@@ -3,6 +3,8 @@ package org.jara;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.jara.engine.Engine;
+import org.jara.mode.Settings;
 
 /**
  * Unit test for simple App.
@@ -17,7 +19,7 @@ public class AppTest
      */
     public AppTest( String testName )
     {
-        super( testName );
+
     }
 
     /**
@@ -33,6 +35,6 @@ public class AppTest
      */
     public void testApp()
     {
-        assertTrue( true );
+
     }
 }

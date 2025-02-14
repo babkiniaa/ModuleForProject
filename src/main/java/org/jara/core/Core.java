@@ -22,16 +22,14 @@ public class Core {
     /*
         Метод запускающий по этапно анализ
      */
-    public Engine scanningStart(Engine engine) {
-        Settings settings = engine.getSettings();
-        String dir = settings.getInputDir();
-        File file = new File(dir);
+    public List<Attentions> scanningStart(Settings settings, String InDir, String OuDir) {
+        File file = new File(InDir);
 
         classes = HashMap.newHashMap(settings.getSize());
         classes = scanDir(file);
-        engine = analyzeDuplicates(engine);
+        List<Attentions> attentions = analyzeDuplicates();
 
-        return engine;
+        return attentions;
     }
     /*
         Сканируются дириктории на наличие java файлов
@@ -46,8 +44,8 @@ public class Core {
                     scanDir(fileDown);
                 } else if (fileDown.getName().endsWith(".java")) {
                     try {
-                        String content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
-                        classes.put(file.getName(), content);
+                        String content = new String(Files.readAllBytes(Paths.get(fileDown.getAbsolutePath())));
+                        classes.put(fileDown.getName(), content);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -61,10 +59,9 @@ public class Core {
     /*
      Поработать с настройками посидеть шириной окна (1 не интересный вариант работы)
      */
-    public Engine analyzeDuplicates(Engine engine) {
+    public List<Attentions> analyzeDuplicates() {
         int windowSize = 5;
         HashMap<String, List<String>> hashToFiles = new HashMap<>();
-        HashMap<String, Attentions> info = new HashMap<>();
 
         for (Map.Entry<String, String> entry : classes.entrySet()) {
             String fileName = entry.getKey();
@@ -76,25 +73,30 @@ public class Core {
                 String hash = hash(block);
 
                 hashToFiles.putIfAbsent(hash, new ArrayList<>());
-                info.putIfAbsent(hash, new Attentions(entry.getKey(), i, block, "Вынеси в отдельный метод"));
                 hashToFiles.get(hash).add(fileName + ":" + (i + 1));
 
             }
         }
 
-        engine.setAttentions(addInEngin(info, hashToFiles));
+        List<Attentions> attentions = addInEngin(hashToFiles);
 
-        return engine;
+        return attentions;
     }
     /*
         Список ошибок заносится в коллекцию
      */
-    public List<Attentions> addInEngin(HashMap<String, Attentions> info, HashMap<String, List<String>> hashToFiles){
+    public List<Attentions> addInEngin(HashMap<String, List<String>> hashToFiles){
         List<Attentions> attentions = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> entry : hashToFiles.entrySet()) {
             if (entry.getValue().size() > 1) {
-                attentions.add(info.get(entry.getValue()));
+                for(String ent: entry.getValue()){
+                    attentions.add(
+                            new Attentions(ent.substring(0,ent.indexOf(':')),
+                            Integer.valueOf(Arrays.toString(ent.split(":"))),
+                            " ",
+                            "Можно попробовать вынести"));
+                }
             }
         }
 

@@ -32,7 +32,7 @@ public class Settings {
     private final int size;
 
     public Settings(){
-        this.mode = Mode.RerurnList;
+        this.mode = Mode.ReturnList;
         this.deep = 1000;
         this.size = 1000;
         this.similarityThreshold = 10;
