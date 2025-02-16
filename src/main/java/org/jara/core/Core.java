@@ -2,7 +2,6 @@ package org.jara.core;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.jara.engine.Engine;
 import org.jara.mode.Settings;
 
 import java.io.File;
@@ -18,21 +17,58 @@ import java.util.*;
 @Getter
 public class Core {
 
+    /*
+        Структура для сохранения рассмотренных классов
+     */
     private HashMap<String, String> classes;
+    /*
+        Ошибки при работе
+     */
+    private String error;
+
     /*
         Метод запускающий по этапно анализ
      */
-    public List<Attentions> scanningStart(Settings settings, String InDir, String OuDir) {
+    public List<Attentions> scanningStart(Settings settings, String InDir) {
         File file = new File(InDir);
-
         classes = HashMap.newHashMap(settings.getSize());
+
         classes = scanDir(file);
         List<Attentions> attentions = analyzeDuplicates();
 
         return attentions;
     }
     /*
-        Сканируются дириктории на наличие java файлов
+        По этапный анализ только 1 файла
+     */
+    public List<Attentions> scanningOneFile(Settings settings, String InDir){
+        File file = new File(InDir);
+        classes = HashMap.newHashMap(settings.getSize());
+        List<Attentions> attentions = null;
+
+        if(file.getName().endsWith(".java")){
+            readFile(file);
+            attentions = analyzeDuplicates();
+        }
+
+        return attentions;
+    }
+
+    public void readFile(File file){
+        String content;
+        System.out.println(file.isFile());
+        System.out.println(Arrays.toString(file.getAbsolutePath().getBytes(StandardCharsets.UTF_8)));
+        System.out.println("Reading file: " + file.getAbsolutePath());
+        try {
+            content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+            classes.put(file.getName(), content);
+        } catch (IOException e) {
+            error = e.toString();
+            e.printStackTrace();
+        }
+    }
+    /*
+        Сканируются директории на наличие java файлов
         для последующего анализа
      */
     public HashMap<String, String> scanDir(File file) {
@@ -43,12 +79,7 @@ public class Core {
                 if (fileDown.isDirectory()) {
                     scanDir(fileDown);
                 } else if (fileDown.getName().endsWith(".java")) {
-                    try {
-                        String content = new String(Files.readAllBytes(Paths.get(fileDown.getAbsolutePath())));
-                        classes.put(fileDown.getName(), content);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    readFile(fileDown);
                 }
             }
 
@@ -56,8 +87,10 @@ public class Core {
 
         return classes;
     }
+
     /*
      Поработать с настройками посидеть шириной окна (1 не интересный вариант работы)
+     Оптимальный по скорости вариант
      */
     public List<Attentions> analyzeDuplicates() {
         int windowSize = 5;
@@ -82,20 +115,22 @@ public class Core {
 
         return attentions;
     }
+
     /*
         Список ошибок заносится в коллекцию
      */
-    public List<Attentions> addInEngin(HashMap<String, List<String>> hashToFiles){
+    public List<Attentions> addInEngin(HashMap<String, List<String>> hashToFiles) {
         List<Attentions> attentions = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> entry : hashToFiles.entrySet()) {
             if (entry.getValue().size() > 1) {
-                for(String ent: entry.getValue()){
+                for (String ent : entry.getValue()) {
                     attentions.add(
-                            new Attentions(ent.substring(0,ent.indexOf(':')),
-                            Integer.valueOf(Arrays.toString(ent.split(":"))),
-                            " ",
-                            "Можно попробовать вынести"));
+                            new Attentions(
+                                    ent.substring(0, ent.indexOf(':')),
+                                    Integer.valueOf(ent.substring(ent.indexOf(':') + 1, ent.length())),
+                                    " ",
+                                    "Можно попробовать вынести"));
                 }
             }
         }
@@ -104,7 +139,7 @@ public class Core {
     }
 
     /*
-        Метод Хэширования подумать над тем как лучше хешировать
+        Метод Хэширования подумать над тем как лучше хэшировать
         И вынос ошибки от сюда
      */
     private String hash(String block) {
@@ -115,10 +150,14 @@ public class Core {
             for (byte b : hash) {
                 hexString.append(String.format("%02x", b));
             }
+
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Ошибка хеширования", e);
+            error = e.toString();
+
+            return "";
         }
+
     }
 
 }
