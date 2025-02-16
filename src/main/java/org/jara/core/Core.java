@@ -56,9 +56,6 @@ public class Core {
 
     public void readFile(File file){
         String content;
-        System.out.println(file.isFile());
-        System.out.println(Arrays.toString(file.getAbsolutePath().getBytes(StandardCharsets.UTF_8)));
-        System.out.println("Reading file: " + file.getAbsolutePath());
         try {
             content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
             classes.put(file.getName(), content);
