@@ -1,9 +1,14 @@
 package org.jara.core;
 
+import com.github.javaparser.ast.expr.SimpleName;
 import lombok.Getter;
 import lombok.Setter;
 import org.jara.mode.Settings;
-
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.visitor.ModifierVisitor;
+import com.github.javaparser.ast.visitor.Visitable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +32,7 @@ public class Core {
     private String error;
 
     /*
-        Метод запускающий по этапно анализ
+        Метод запускающий по этапно анализ с выбором анализа (AST или метод ХЭШ)
      */
     public List<Attentions> scanningStart(Settings settings, String InDir) {
         File file = new File(InDir);
@@ -84,7 +89,73 @@ public class Core {
 
         return classes;
     }
+    /*
+      Нормализует имена переменных в AST.
+     */
+    public class VariableNormalizer extends ModifierVisitor<Void> {
+        private int variableCounter = 0;
 
+        @Override
+        public Visitable visit(SimpleName n, Void arg) {
+            // Заменяем имя переменной на var1, var2 и т.д.
+            return new SimpleName("var" + (++variableCounter));
+        }
+    }
+
+    /*
+      Сравнивает два узла AST.
+     */
+    public boolean compareAST(Node node1, Node node2) {
+        if (!node1.getClass().equals(node2.getClass())) {
+            return false;
+        }
+
+        List<Node> children1 = node1.getChildNodes();
+        List<Node> children2 = node2.getChildNodes();
+        if (children1.size() != children2.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < children1.size(); i++) {
+            if (!compareAST(children1.get(i), children2.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Находит и выводит дублирующиеся методы.
+     */
+    private Map<Integer, List<Attentions>> findAndPrintDuplicateMethods(CompilationUnit cu, String filePath) {
+        List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
+        Map<Integer, List<Attentions>> methodHashes = new HashMap<>();
+
+        for (MethodDeclaration method : methods) {
+            int hash = calculateASTHash(method);
+            Attentions attentions = new Attentions(
+                    method.getNameAsString(),
+                    method.getRange().map(range -> range.begin.line).orElse(-1),
+                    filePath,
+                    "Попробуй вынести "
+            );
+            methodHashes.computeIfAbsent(hash, k -> new ArrayList<>()).add(attentions);
+        }
+
+//        for (Map.Entry<Integer, List<MethodInfo>> entry : methodHashes.entrySet()) {
+//            List<MethodInfo> duplicates = entry.getValue();
+//            if (duplicates.size() > 1) {
+//                System.out.println("Duplicate methods found:");
+//                for (MethodInfo info : duplicates) {
+//                    System.out.println("  Method: " + info.methodName +
+//                            ", Line: " + info.lineNumber +
+//                            ", File: " + info.fileName);
+//                }
+//            }
+//        }
+        return methodHashes;
+    }
     /*
      Поработать с настройками посидеть шириной окна (1 не интересный вариант работы)
      Оптимальный по скорости вариант
@@ -134,7 +205,6 @@ public class Core {
 
         return attentions;
     }
-
     /*
         Метод Хэширования подумать над тем как лучше хэшировать
         И вынос ошибки от сюда
@@ -155,6 +225,16 @@ public class Core {
             return "";
         }
 
+    }
+    /*
+       Вычисляет хэш для узла AST.
+    */
+    private int calculateASTHash(Node node) {
+        int hash = node.getClass().hashCode();
+        for (Node child : node.getChildNodes()) {
+            hash = 31 * hash + calculateASTHash(child);
+        }
+        return hash;
     }
 
 }
