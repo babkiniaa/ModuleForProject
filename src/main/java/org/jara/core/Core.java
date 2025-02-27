@@ -8,6 +8,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import lombok.Getter;
 import lombok.Setter;
 import org.jara.mode.Settings;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,37 +31,66 @@ public class Core {
      */
     private String error;
 
-    /*
-        Метод запускающий по этапно анализ с выбором анализа (AST или метод ХЭШ)
-     */
-    public List<Attentions> scanningStart(Settings settings, String InDir) {
-        File file = new File(InDir);
-        classes = HashMap.newHashMap(settings.getSize());
+    private Settings settings;
 
-        classes = scanDir(file);
-        // В зависимоти от метода будет в будущем
-        // List<Attentions> attentions = analyzeDuplicates();
-        List<Attentions> attentions = analyzeAST();
-
-        return attentions;
+    public Core(Settings settings) {
+        this.settings = settings;
     }
-    /*
-        По этапный анализ только 1 файла
-     */
-    public List<Attentions> scanningOneFile(Settings settings, String InDir){
-        File file = new File(InDir);
-        classes = HashMap.newHashMap(settings.getSize());
-        List<Attentions> attentions = null;
 
-        if(file.getName().endsWith(".java")){
-            readFile(file);
-            attentions = analyzeDuplicates();
+    /*
+        В зависимости от выбранного режима выбор анализа и отчета
+     */
+    public List<Attentions> selectMode() {
+        List<Attentions> attentions = new ArrayList<>();
+
+        switch (settings.getMode()) {
+            case ReturnListHash:
+                attentions = analyzeDuplicates(settings);
+            case WriteHash:
+                attentions = analyzeDuplicates(settings);
+            case ReturnListAST:
+                attentions = analyzeAST();
+            case WriteAST:
+                attentions = analyzeAST();
         }
 
         return attentions;
     }
 
-    public void readFile(File file){
+    /*
+        Метод запускающий по этапно анализ с выбором анализа (AST или метод ХЭШ)
+     */
+    public List<Attentions> scanningStart() {
+        File file = new File(settings.getInputDir());
+        classes = HashMap.newHashMap(settings.getSize());
+        List<Attentions> attentions;
+
+        classes = scanDir(file);
+        attentions = selectMode();
+
+        return attentions;
+    }
+
+    /*
+        По этапный анализ только 1 файла
+     */
+    public List<Attentions> scanningOneFile() {
+        File file = new File(settings.getInputDir());
+        classes = HashMap.newHashMap(settings.getSize());
+        List<Attentions> attentions = null;
+
+        if (file.getName().endsWith(".java")) {
+            readFile(file);
+            attentions = selectMode();
+        }
+
+        return attentions;
+    }
+
+    /*
+        Чтение и занесение данных из файла
+     */
+    public void readFile(File file) {
         String content;
         try {
             content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
@@ -70,6 +100,7 @@ public class Core {
             e.printStackTrace();
         }
     }
+
     /*
         Сканируются директории на наличие java файлов
         для последующего анализа
@@ -95,8 +126,8 @@ public class Core {
      Поработать с настройками посидеть шириной окна (1 не интересный вариант работы)
      Оптимальный по скорости вариант
      */
-    public List<Attentions> analyzeDuplicates() {
-        int windowSize = 5;
+    public List<Attentions> analyzeDuplicates(Settings settings) {
+        int windowSize = settings.getWindowSize();
         HashMap<String, List<String>> hashToFiles = new HashMap<>();
 
         for (Map.Entry<String, String> entry : classes.entrySet()) {
@@ -188,6 +219,7 @@ public class Core {
 
         return attentions;
     }
+
     /*
         Метод Хэширования подумать над тем как лучше хэшировать
         И вынос ошибки от сюда
@@ -209,5 +241,6 @@ public class Core {
         }
 
     }
+
 
 }

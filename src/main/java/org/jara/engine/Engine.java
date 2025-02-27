@@ -34,31 +34,43 @@ public class Engine {
 
     public Engine(Settings settings) {
         this.settings = settings;
-        core = new Core();
+        core = new Core(settings);
+    }
+
+    public Engine() {
+        settings = new Settings();
     }
 
     /*
         Метод запускающий сканирование без лишней инициализации
+        запускает анализ только 1 файла
      */
     public List<Attentions> scan(@NotNull String patch) {
-        return scan(patch);
+        settings = new Settings();
+        settings.setInputDir(patch);
+        core = new Core(settings);
+
+        return core.scanningOneFile();
     }
 
     /*
         Основной метод запуска для прохода по всем файлам
      */
     public void scan() {
-        attentions = core.scanningStart(settings, settings.getInputDir());
-        if (settings.getMode().equals(Mode.Write) && settings.getOutputDir() != null) {
+        attentions = core.scanningStart();
+        if ((settings.getMode().equals(Mode.WriteAST) || settings.getMode().equals(Mode.WriteHash))
+                && settings.getOutputDir() != null) {
             writeReport(attentions);
         }
     }
+
     /*
         Сканирование только 1 файла
      */
     public void scanOneFile() {
-        attentions = core.scanningOneFile(settings, settings.getInputDir());
-        if (settings.getMode().equals(Mode.Write) && settings.getOutputDir() != null) {
+        attentions = core.scanningOneFile();
+        if ((settings.getMode().equals(Mode.WriteAST) || settings.getMode().equals(Mode.WriteHash))
+                && settings.getOutputDir() != null) {
             writeReport(attentions);
         }
     }
