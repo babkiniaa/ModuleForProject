@@ -4,13 +4,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jara.core.Attentions;
 import org.jara.core.Core;
+import org.jara.core.FileUtils;
 import org.jara.mode.Mode;
 import org.jara.mode.Settings;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.List;
+
+import static org.jara.core.FileUtils.writeReport;
 
 @Setter
 @Getter
@@ -31,6 +32,7 @@ public class Engine {
         Основная двигающая сила
      */
     private Core core;
+
 
     public Engine(Settings settings) {
         this.settings = settings;
@@ -60,7 +62,7 @@ public class Engine {
         attentions = core.scanningStart();
         if ((settings.getMode().equals(Mode.WriteAST) || settings.getMode().equals(Mode.WriteHash))
                 && settings.getOutputDir() != null) {
-            writeReport(attentions);
+            FileUtils.writeReport(settings, attentions);
         }
     }
 
@@ -71,46 +73,9 @@ public class Engine {
         attentions = core.scanningOneFile();
         if ((settings.getMode().equals(Mode.WriteAST) || settings.getMode().equals(Mode.WriteHash))
                 && settings.getOutputDir() != null) {
-            writeReport(attentions);
+            FileUtils.writeReport(settings, attentions);
         }
     }
 
-    /*
-        Создание отчета(Если в режиме выбран)
-     */
-    public void writeReport(List<Attentions> attentions) {
-        try {
-            File file = new File(settings.getOutputDir());
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            byte[] buffer = stringAttentions(attentions).getBytes();
-
-            fileOutputStream.write(buffer);
-            fileOutputStream.close();
-
-        } catch (Exception e) {
-            error = e.getMessage();
-        }
-
-    }
-
-    /*
-        Записываем список из Внимания в строку для дальнейшей записи в файл
-     */
-    public String stringAttentions(List<Attentions> attentions) {
-        String res = "";
-
-        for (var attention : attentions) {
-            res += attention.getNameFile() + "\r\n";
-            res += attention.getLine() + "\r\n";
-            res += attention.getCode() + "\r\n";
-            res += attention.getDescription() + "\r\n";
-            res += '\n';
-        }
-
-        return res;
-    }
 
 }
