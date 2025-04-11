@@ -1,6 +1,7 @@
 package org.jara;
 
 import org.jara.engine.Engine;
+import org.jara.mode.Mode;
 import org.jara.mode.Settings;
 
 public class Main {
@@ -12,8 +13,9 @@ public class Main {
 
 
 //        settings.setInputDir("C:/Users/Ярик/Desktop/module");
-        settings.setInputDir("J:/module/src/main/java/org/jara/mode/Settings.java");
-        Engine engine = new Engine(settings);
+        settings.setInputDir("J:/module/src/main/java/org/jara/");
+        settings.setMode(Mode.ReturnEncapsulation);
+//        Engine engine = new Engine(settings);
         engine.scan();
 
 

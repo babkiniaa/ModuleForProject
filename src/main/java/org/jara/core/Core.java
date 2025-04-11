@@ -86,7 +86,7 @@ public class Core {
      */
     public List<Attentions> scanningOneFile() {
         File file = new File(settings.getInputDir());
-        classes = HashMap.newHashMap(settings.getSize());
+        classes = new HashMap<>();
         List<Attentions> attentions = null;
 
         if (file.getName().endsWith(".java")) {
