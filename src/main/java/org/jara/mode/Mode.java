@@ -1,6 +1,10 @@
 package org.jara.mode;
 
 public enum Mode {
-    Write,
-    ReturnList
+    WriteHash,
+    WriteAST,
+    WriteEncapsulation,
+    ReturnListHash,
+    ReturnListAST,
+    ReturnEncapsulation
 }

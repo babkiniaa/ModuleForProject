@@ -19,39 +19,44 @@ public class Settings {
      */
     private int deep;
     /*
-        Порог правдоподобия(Симметричности) 1-10
-     */
-    private float similarityThreshold;
-    /*
         Режим работы модуля
      */
     private Mode mode;
     /*
         Величина Стека сбора ошибок
      */
-    private final int size;
+    private int size;
+    /*
+        Параметр отвечающий за величину окна в режиме ХЭШ
+     */
+    private int windowSize;
+
+    private int minDuplicateCount;
 
     public Settings(){
-        this.mode = Mode.ReturnList;
+        this.mode = Mode.ReturnListHash;
         this.deep = 1000;
         this.size = 1000;
-        this.similarityThreshold = 10;
+        this.windowSize = 5;
+        this.minDuplicateCount = 2;
     }
 
     public Settings(Mode mode){
         this.mode = mode;
         this.deep = 1000;
         this.size = 1000;
-        this.similarityThreshold = 10;
+        this.windowSize = 5;
+        this.minDuplicateCount = 2;
     }
 
-    public Settings(Mode mode, String outputDir, String inputDir){
+    public Settings(Mode mode, String outputDir, String inputDir, int minDuplicateCount){
         this.mode = mode;
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.deep = 1000;
         this.size = 1000;
-        this.similarityThreshold = 10;
+        this.windowSize = 5;
+        this.minDuplicateCount = minDuplicateCount;
     }
 
 

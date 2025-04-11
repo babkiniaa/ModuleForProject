@@ -21,7 +21,6 @@ public class EncapsulationAnalysis {
             try {
                 JavaParser javaParser = new JavaParser();
                 ParseResult<CompilationUnit> parseResult = javaParser.parse(content);
-                System.out.println(parseResult.getResult().get());
                 if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
                     CompilationUnit cu = parseResult.getResult().get();
                 }
