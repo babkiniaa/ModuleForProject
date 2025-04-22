@@ -72,7 +72,7 @@ public class Core {
      */
     public List<Attentions> scanningStart() {
         File file = new File(settings.getInputDir());
-        classes = HashMap.newHashMap(settings.getSize());
+        classes = new HashMap<>();
         List<Attentions> attentions;
 
         classes = scanDir(file);
