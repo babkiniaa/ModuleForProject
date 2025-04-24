@@ -59,5 +59,4 @@ public class Settings {
         this.minDuplicateCount = minDuplicateCount;
     }
 
-
 }

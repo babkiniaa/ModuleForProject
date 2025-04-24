@@ -6,89 +6,82 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class HashAnalysis {
 
-    private final MessageDigest digest;
     private final CodeNormalizer normalizer;
 
     public HashAnalysis() {
-        try {
-            this.digest = MessageDigest.getInstance("SHA-256");
-            this.normalizer = new CodeNormalizer();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 algorithm not available", e);
-        }
+        this.normalizer = new CodeNormalizer();
     }
 
     public List<Attentions> startAnalysis(Settings settings, Map<String, String> classes) {
         int windowSize = settings.getWindowSize();
-        Map<String, List<CodeLocation>> hashToLocations = new HashMap<>();
+        int minDuplicateCount = settings.getMinDuplicateCount();
+
+        Map<String, List<Attentions>> hashToLocations = new ConcurrentHashMap<>();
 
         classes.entrySet().parallelStream().forEach(entry -> {
             String fileName = entry.getKey();
-            String normalizedContent = normalizer.normalize(entry.getValue());
+            String content = entry.getValue();
+            String normalizedContent = normalizer.normalize(content);
             List<String> lines = Arrays.asList(normalizedContent.split("\n"));
 
             for (int i = 0; i <= lines.size() - windowSize; i++) {
                 String block = String.join("\n", lines.subList(i, i + windowSize));
                 String hash = hash(block);
 
-                synchronized (hashToLocations) {
-                    hashToLocations.computeIfAbsent(hash, k -> new ArrayList<>())
-                            .add(new CodeLocation(fileName, i + 1, block));
-                }
+                hashToLocations
+                        .computeIfAbsent(hash, k -> Collections.synchronizedList(new ArrayList<>()))
+                        .add(new Attentions(fileName, i + 1, block, " "));
             }
         });
 
-        return createAttentions(hashToLocations, settings.getMinDuplicateCount());
+        return createAttentions(hashToLocations, minDuplicateCount);
     }
 
     private String hash(String block) {
-        byte[] hashBytes = digest.digest(block.getBytes(StandardCharsets.UTF_8));
-        StringBuilder hexString = new StringBuilder(hashBytes.length * 2);
+        try {
+            MessageDigest localDigest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = localDigest.digest(block.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder(hashBytes.length * 2);
 
-        for (byte b : hashBytes) {
-            hexString.append(String.format("%02x", b));
+            for (byte b : hashBytes) {
+                hexString.append(String.format("%02x", b));
+            }
+
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 algorithm not available", e);
         }
-
-        return hexString.toString();
     }
 
-    private List<Attentions> createAttentions(Map<String, List<CodeLocation>> hashToLocations, int minDuplicateCount) {
+    private List<Attentions> createAttentions(Map<String, List<Attentions>> hashToLocations, int minDuplicateCount) {
         return hashToLocations.entrySet().stream()
                 .filter(entry -> entry.getValue().size() >= minDuplicateCount)
                 .flatMap(entry -> entry.getValue().stream()
                         .map(loc -> new Attentions(
-                                loc.fileName,
-                                loc.lineNumber,
-                                loc.codeBlock,
+                                loc.getNameFile(),
+                                loc.getLine(),
+                                loc.getCode(),
                                 String.format("Дублирующийся код найден в %d местах", entry.getValue().size())
                         )))
                 .collect(Collectors.toList());
     }
 
-    private static class CodeLocation {
-        final String fileName;
-        final int lineNumber;
-        final String codeBlock;
-
-        CodeLocation(String fileName, int lineNumber, String codeBlock) {
-            this.fileName = fileName;
-            this.lineNumber = lineNumber;
-            this.codeBlock = codeBlock;
-        }
-    }
-
     private static class CodeNormalizer {
         String normalize(String code) {
-            return code
-                    .replaceAll("//.*|/\\*.*?\\*/", "")
-                    .replaceAll("\\s+", " ")
-                    .replaceAll("[{};]", "")
-                    .toLowerCase()
-                    .trim();
+            code = code.replaceAll("(?s)/\\*.*?\\*/", "");
+            code = code.replaceAll("[ \\t]*\\n", "\n");
+
+            List<String> lines = Arrays.stream(code.split("\n"))
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty())
+                    .collect(Collectors.toList());
+
+            return String.join("\n", lines);
         }
     }
 
