@@ -3,6 +3,7 @@ package org.jara.core;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 
@@ -30,14 +31,19 @@ public class EncapsulationAnalysis {
 
                     for (FieldDeclaration field : fields) {
                         if (!isPrivateField(field)) {
-                            attentions.add(new Attentions(fileName, field.getRange().get().getLineCount(), field.getTokenRange().get().toString(), "Поле не Является private"));
+                            if(field.getRange().isPresent() && field.getTokenRange().isPresent()) {
+                                attentions.add(new Attentions(fileName, field.getRange().get().getLineCount(), field.getTokenRange().get().toString(), "Поле не Является private"));
+                            }
                         }
                     }
                     List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
 
                     for (MethodDeclaration method : methods) {
-                        if (!isPublicMethod(method)){
-                            attentions.add(new Attentions(fileName, method.getRange().get().getLineCount(), method.getTokenRange().get().toString(), "Метод не помечен, как public"));
+                        if (!isPublicMethod(method)) {
+                            if(method.getRange().isPresent() && method.getTokenRange().isPresent()) {
+                                attentions.add(new Attentions(fileName, method.getRange().get().getLineCount(), method.getTokenRange().get().toString(), "Метод не помечен, как public"));
+                            }
+
                         }
                     }
                 }
@@ -50,7 +56,7 @@ public class EncapsulationAnalysis {
     }
 
     public boolean isPrivateField(FieldDeclaration fieldDeclaration) {
-        if (fieldDeclaration.getChildNodes().get(0) != null && fieldDeclaration.getChildNodes().get(0).equals("private")) {
+        if (fieldDeclaration.getChildNodes().size() > 0 && fieldDeclaration.getChildNodes().get(0).equals(Modifier.privateModifier())) {
 
             return true;
         } else {
@@ -60,7 +66,7 @@ public class EncapsulationAnalysis {
     }
 
     public boolean isPublicMethod(MethodDeclaration methodDeclaration) {
-        if (methodDeclaration.getModifiers().get(0) != null && methodDeclaration.getModifiers().get(0).equals("public")) {
+        if (methodDeclaration.getModifiers().size() > 0 && methodDeclaration.getModifiers().get(0).equals(Modifier.publicModifier())) {
 
             return true;
         } else {

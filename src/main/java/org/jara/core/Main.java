@@ -10,7 +10,7 @@ public class Main {
     public static void main(String[] args) {
         List<Attentions> attentions;
         String path = "C:/Users/Ярик/Desktop/module";
-        Mode mode = Mode.ReturnListAST;
+        Mode mode = Mode.ReturnEncapsulation;
         Settings config = new Settings();
         config.setInputDir(path);
         if (mode != null) {
